@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <termios.h>
 
 #include "c2tool.h"
 
@@ -103,7 +104,7 @@ static void usage(int argc, char **argv)
 	if (argc > 0)
 		cmd_filt = argv[0];
 
-	printf("Usage:\t%s [options] <gpio c2d> <gpio c2ck> <gpio c2ckstb> command\n", argv0);
+	printf("Usage:\t%s [options] <tty device> command\n", argv0);
 	printf("\t--version\tshow version (%s)\n", c2tool_version);
 	printf("Commands:\n");
 	for_each_cmd(cmd) {
@@ -192,6 +193,39 @@ static int init_gpio(const char* arg)
 	return fd;
 }
 
+#define BAUDRATE B115200
+static int init_tty(const char* arg)
+{
+    struct termios tio;
+    struct termios stdio;
+    int tty_fd_l;
+
+    memset(&stdio,0,sizeof(stdio));
+    stdio.c_iflag=0;
+    stdio.c_oflag=0;
+    stdio.c_cflag=0;
+    stdio.c_lflag=0;
+    stdio.c_cc[VMIN]=1;
+    stdio.c_cc[VTIME]=0;
+
+    memset(&tio,0,sizeof(tio));
+    tio.c_iflag=0;
+    tio.c_oflag=0;
+    tio.c_cflag=CS8|CREAD|CLOCAL;           // 8n1, see termios.h for more information
+    tio.c_lflag=0;
+    tio.c_cc[VMIN]=1;
+    tio.c_cc[VTIME]=5;
+    if((tty_fd_l = open(arg , O_RDWR | O_NONBLOCK)) == -1){
+        printf("Error while opening %s\n", arg); // Just if you want user interface error control
+        exit(EXIT_FAILURE);
+    }
+    cfsetospeed(&tio,BAUDRATE);    
+    cfsetispeed(&tio,BAUDRATE);            // baudrate is declarated above
+    tcsetattr(tty_fd_l,TCSANOW,&tio);
+
+    return tty_fd_l;
+}
+
 HIDDEN(dummy1, NULL, NULL);
 HIDDEN(dummy2, NULL, NULL);
 
@@ -200,7 +234,7 @@ int main(int argc, char **argv)
 	int err;
 	const struct cmd *cmd = NULL;
 	struct c2_device_info info;
-	struct c2tool_state state;
+	struct c2tool_state state = {{0}};
 
 	/* calculate command size including padding */
 	cmd_size = abs((long)&__cmd_dummy1 - (long)&__cmd_dummy2);
@@ -213,11 +247,11 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	if (argc < 4) {
+	if (argc < 2) {
 		usage(0, NULL);
 		return 1;
 	}
-
+/*
 	state.c2if.gpio_c2d = init_gpio(*argv);
 	if (state.c2if.gpio_c2d < 0) {
 		usage(0, NULL);
@@ -236,6 +270,14 @@ int main(int argc, char **argv)
 
 	state.c2if.gpio_c2ckstb = init_gpio(*argv);
 	if (state.c2if.gpio_c2ckstb < 0) {
+		usage(0, NULL);
+		return 1;
+	}
+	argc--;
+	argv++;
+*/
+	state.c2if.tty_fd = init_tty(*argv);
+	if (!state.c2if.tty_fd < 0) {
 		usage(0, NULL);
 		return 1;
 	}
@@ -263,5 +305,7 @@ int main(int argc, char **argv)
 	} else if (err < 0)
 		fprintf(stderr, "command failed: %s (%d)\n", strerror(-err), err);
 
+	if (state.c2if.tty_fd)
+		close(state.c2if.tty_fd);
 	return err ? EXIT_FAILURE : EXIT_SUCCESS;
 }

@@ -74,33 +74,41 @@
  */
 static void c2d_set(struct c2interface *c2if, int state)
 {
+/*
 	if (state)
 		pwrite(c2if->gpio_c2d, "1", 1, 0);
 	else
 		pwrite(c2if->gpio_c2d, "0", 1, 0);
+*/
 }
 
 static int c2d_get(struct c2interface *c2if)
 {
+/*
 	char buf;
 
 	pread(c2if->gpio_c2d, &buf, 1, 0);
 
 	return buf == '1';
+*/
 }
 
 static void c2ck_set(struct c2interface *c2if, int state)
 {
+/*
 	if (state)
 		pwrite(c2if->gpio_c2ck, "1", 1, 0);
 	else
 		pwrite(c2if->gpio_c2ck, "0", 1, 0);
+*/
 }
 
 static void c2ck_strobe(struct c2interface *c2if)
 {
+/*
 	pwrite(c2if->gpio_c2ckstb, "0", 1, 0);
 	pwrite(c2if->gpio_c2ckstb, "1", 1, 0);
+*/
 }
 
 /*
