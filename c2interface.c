@@ -72,43 +72,53 @@
  * state 0: drive low
  *       1: high-z
  */
+
+
+unsigned char set_clock_1[] = {'C'};
+unsigned char set_clock_0[] = {'c'};
+unsigned char set_data_1[]  = {'O'};
+unsigned char set_data_0[]  = {'o'};
+unsigned char get_data[]    = {'i'};
+unsigned char reset_cmd[]   = {'r'};
+unsigned char strobe_cmd[]  = {'s'};
+
+
+
 static void c2d_set(struct c2interface *c2if, int state)
 {
-/*
+	int ret;
 	if (state)
-		pwrite(c2if->gpio_c2d, "1", 1, 0);
+		ret = write(c2if->tty_fd, set_data_1, 1);
 	else
-		pwrite(c2if->gpio_c2d, "0", 1, 0);
-*/
+		ret = write(c2if->tty_fd, set_data_0, 1);
 }
 
 static int c2d_get(struct c2interface *c2if)
 {
-/*
-	char buf;
+	unsigned char buf[200] = {0};
+	int cnt, ret;
 
-	pread(c2if->gpio_c2d, &buf, 1, 0);
-
-	return buf == '1';
-*/
+	ret = write(c2if->tty_fd, get_data , 1);
+	usleep(10000);
+	cnt = read(c2if->tty_fd, buf, 200);
+//	printf("get = %c\n", buf[0]);
+	return buf[0] == '1';
 }
 
 static void c2ck_set(struct c2interface *c2if, int state)
 {
-/*
+	int ret;
 	if (state)
-		pwrite(c2if->gpio_c2ck, "1", 1, 0);
+		ret = write(c2if->tty_fd, set_clock_1, 1);
 	else
-		pwrite(c2if->gpio_c2ck, "0", 1, 0);
-*/
+		ret = write(c2if->tty_fd, set_clock_0, 1);
 }
 
 static void c2ck_strobe(struct c2interface *c2if)
 {
-/*
-	pwrite(c2if->gpio_c2ckstb, "0", 1, 0);
-	pwrite(c2if->gpio_c2ckstb, "1", 1, 0);
-*/
+	int ret;
+	ret = write(c2if->tty_fd, strobe_cmd, 1);
+//	printf("strobe\n");
 }
 
 /*

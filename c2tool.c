@@ -199,6 +199,7 @@ static int init_tty(const char* arg)
     struct termios tio;
     struct termios stdio;
     int tty_fd_l;
+	unsigned char buf[200] = {0};
 
     memset(&stdio,0,sizeof(stdio));
     stdio.c_iflag=0;
@@ -219,10 +220,12 @@ static int init_tty(const char* arg)
         printf("Error while opening %s\n", arg); // Just if you want user interface error control
         exit(EXIT_FAILURE);
     }
-    cfsetospeed(&tio,BAUDRATE);    
+    cfsetospeed(&tio,BAUDRATE);
     cfsetispeed(&tio,BAUDRATE);            // baudrate is declarated above
     tcsetattr(tty_fd_l,TCSANOW,&tio);
-
+	sleep(2);
+    read(tty_fd_l, buf, 200);
+	printf("Programmer info:\n %s", buf);
     return tty_fd_l;
 }
 
