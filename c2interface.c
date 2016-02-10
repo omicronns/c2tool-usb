@@ -147,7 +147,7 @@ void c2_reset(struct c2interface *c2if)
 static void c2_write_ar(struct c2interface *c2if, unsigned char addr)
 {
 	int i;
-	printf("ar_write\n");
+//	printf("ar_write\n");
 	/* START field */
 	c2d_set(c2if, 1);
 	c2ck_strobe(c2if);
@@ -238,7 +238,7 @@ static int c2_write_dr(struct c2interface *c2if, unsigned char data)
 		cnt = read(c2if->tty_fd, buf, 1);
 		usleep(100);
 	}
-//	printf("c2_write_dr = %c %d\n", buf[0], cnt);
+//	printf("c2_write_dr[%x] = %c %d\n", data, buf[0], cnt);
 	if (buf[0] == '1')
 		return -EIO;
 
