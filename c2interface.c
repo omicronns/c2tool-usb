@@ -83,6 +83,8 @@ unsigned char reset_cmd[]   = {'r'};
 unsigned char strobe_cmd[]  = {'s'};
 
 unsigned char dwrite_cmd[]  = {'D'};
+unsigned char dread_cmd[]   = {'d'};
+unsigned char arread_cmd[]  = {'A'};
 
 
 
@@ -145,7 +147,7 @@ void c2_reset(struct c2interface *c2if)
 static void c2_write_ar(struct c2interface *c2if, unsigned char addr)
 {
 	int i;
-
+	printf("ar_write\n");
 	/* START field */
 	c2d_set(c2if, 1);
 	c2ck_strobe(c2if);
@@ -169,10 +171,11 @@ static void c2_write_ar(struct c2interface *c2if, unsigned char addr)
 	c2ck_strobe(c2if);
 }
 
+#if 0
 static int c2_read_ar(struct c2interface *c2if, unsigned char *addr)
 {
 	int i;
-
+	printf("ar_read\n");
 	/* START field */
 	c2d_set(c2if, 1);
 	c2ck_strobe(c2if);
@@ -199,6 +202,27 @@ static int c2_read_ar(struct c2interface *c2if, unsigned char *addr)
 
 	return 0;
 }
+#endif
+
+static int c2_read_ar(struct c2interface *c2if, unsigned char *addr)
+{
+	unsigned char buf[200] = {0};
+	int cnt=-1, ret;
+
+//	printf("ar_read\n");
+
+	ret = write(c2if->tty_fd, arread_cmd, 1);
+	usleep(5000);
+	while (cnt == -1) {
+		cnt = read(c2if->tty_fd, buf, 1);
+		usleep(100);
+	}
+//	printf("ar_read = %x %d\n", buf[0], cnt);
+	*addr = buf[0];
+	
+	return 0;
+
+}
 
 static int c2_write_dr(struct c2interface *c2if, unsigned char data)
 {
@@ -224,49 +248,26 @@ static int c2_write_dr(struct c2interface *c2if, unsigned char data)
 
 static int c2_read_dr(struct c2interface *c2if, unsigned char *data)
 {
-	int timeout, i;
+	unsigned char buf[200] = {0};
+	int cnt=-1, ret;
 
-	/* START field */
-	c2d_set(c2if, 1);
-	c2ck_strobe(c2if);
+	ret = write(c2if->tty_fd, dread_cmd, 1);
+	usleep(5000);
 
-	/* INS field (00b, LSB first) */
-	c2d_set(c2if, 0);
-	c2ck_strobe(c2if);
-	c2d_set(c2if, 0);
-	c2ck_strobe(c2if);
-
-	/* LENGTH field (00b, LSB first -> 1 byte) */
-	c2d_set(c2if, 0);
-	c2ck_strobe(c2if);
-	c2d_set(c2if, 0);
-	c2ck_strobe(c2if);
-
-	/* WAIT field */
-	c2d_set(c2if, 1);
-	timeout = 20;
-	do {
-		c2ck_strobe(c2if);
-		if (c2d_get(c2if))
-			break;
-
-		usleep(1);
-	} while (--timeout > 0);
-	if (timeout == 0)
-		return -EIO;
-
-	/* DATA field */
-	*data = 0;
-	for (i = 0; i < 8; i++) {
-		*data >>= 1;	/* shift in 8-bit DATA field LSB first */
-
-		c2ck_strobe(c2if);
-		if (c2d_get(c2if))
-			*data |= 0x80;
+	while (cnt == -1) {
+		cnt = read(c2if->tty_fd, buf, 1);
+		usleep(100);
 	}
-
-	/* STOP field */
-	c2ck_strobe(c2if);
+//	printf("dr_read %x %d\t", buf[0], cnt);
+	*data = buf[0];
+	cnt = -1;
+	while (cnt == -1) {
+		cnt = read(c2if->tty_fd, buf, 1);
+		usleep(100);
+	}
+//	printf("dr_read = %x %d\n", buf[0], cnt);
+	if (buf[0] == '1')
+		return -EIO;
 
 	return 0;
 }
