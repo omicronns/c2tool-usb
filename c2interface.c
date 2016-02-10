@@ -82,6 +82,8 @@ unsigned char get_data[]    = {'i'};
 unsigned char reset_cmd[]   = {'r'};
 unsigned char strobe_cmd[]  = {'s'};
 
+unsigned char dwrite_cmd[]  = {'D'};
+
 
 
 static void c2d_set(struct c2interface *c2if, int state)
@@ -96,12 +98,15 @@ static void c2d_set(struct c2interface *c2if, int state)
 static int c2d_get(struct c2interface *c2if)
 {
 	unsigned char buf[200] = {0};
-	int cnt, ret;
+	int cnt=-1, ret;
 
 	ret = write(c2if->tty_fd, get_data , 1);
-	usleep(10000);
-	cnt = read(c2if->tty_fd, buf, 200);
-//	printf("get = %c\n", buf[0]);
+	usleep(8000);
+	while (cnt == -1) {
+		cnt = read(c2if->tty_fd, buf, 1);
+		usleep(100);
+	}
+//	printf("get = %c %d\n", buf[0], cnt);
 	return buf[0] == '1';
 }
 
@@ -197,49 +202,24 @@ static int c2_read_ar(struct c2interface *c2if, unsigned char *addr)
 
 static int c2_write_dr(struct c2interface *c2if, unsigned char data)
 {
-	int timeout, i;
+	unsigned char buf[200] = {0};
+	int cnt=-1, ret;
 
-	/* START field */
-	c2d_set(c2if, 1);
-	c2ck_strobe(c2if);
+//	printf("c2_write_dr\n");
 
-	/* INS field (01b, LSB first) */
-	c2d_set(c2if, 1);
-	c2ck_strobe(c2if);
-	c2d_set(c2if, 0);
-	c2ck_strobe(c2if);
-
-	/* LENGTH field (00b, LSB first -> 1 byte) */
-	c2d_set(c2if, 0);
-	c2ck_strobe(c2if);
-	c2d_set(c2if, 0);
-	c2ck_strobe(c2if);
-
-	/* DATA field */
-	for (i = 0; i < 8; i++) {
-		c2d_set(c2if, data & 0x01);
-		c2ck_strobe(c2if);
-
-		data >>= 1;
+	ret = write(c2if->tty_fd, dwrite_cmd, 1);
+	ret = write(c2if->tty_fd, &data , 1);
+	usleep(5000);
+	while (cnt == -1) {
+		cnt = read(c2if->tty_fd, buf, 1);
+		usleep(100);
 	}
-
-	/* WAIT field */
-	c2d_set(c2if, 1);
-	timeout = 20;
-	do {
-		c2ck_strobe(c2if);
-		if (c2d_get(c2if))
-			break;
-
-		usleep(1);
-	} while (--timeout > 0);
-	if (timeout == 0)
+//	printf("c2_write_dr = %c %d\n", buf[0], cnt);
+	if (buf[0] == '1')
 		return -EIO;
 
-	/* STOP field */
-	c2ck_strobe(c2if);
-
 	return 0;
+
 }
 
 static int c2_read_dr(struct c2interface *c2if, unsigned char *data)

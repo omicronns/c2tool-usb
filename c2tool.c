@@ -225,7 +225,7 @@ static int init_tty(const char* arg)
     tcsetattr(tty_fd_l,TCSANOW,&tio);
 	sleep(2);
     read(tty_fd_l, buf, 200);
-	printf("Programmer info:\n %s", buf);
+//	printf("Programmer info:\n %s", buf);
     return tty_fd_l;
 }
 
