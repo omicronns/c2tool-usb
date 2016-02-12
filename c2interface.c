@@ -212,10 +212,10 @@ static int c2_read_ar(struct c2interface *c2if, unsigned char *addr)
 //	printf("ar_read\n");
 
 	ret = write(c2if->tty_fd, arread_cmd, 1);
-	usleep(5000);
+//	usleep(1000);
 	while (cnt == -1) {
 		cnt = read(c2if->tty_fd, buf, 1);
-		usleep(100);
+//		usleep(100);
 	}
 //	printf("ar_read = %x %d\n", buf[0], cnt);
 	*addr = buf[0];
@@ -233,10 +233,10 @@ static int c2_write_dr(struct c2interface *c2if, unsigned char data)
 
 	ret = write(c2if->tty_fd, dwrite_cmd, 1);
 	ret = write(c2if->tty_fd, &data , 1);
-	usleep(5000);
+//	usleep(5000);
 	while (cnt == -1) {
 		cnt = read(c2if->tty_fd, buf, 1);
-		usleep(100);
+//		usleep(100);
 	}
 //	printf("c2_write_dr[%x] = %c %d\n", data, buf[0], cnt);
 	if (buf[0] == '1')
@@ -252,18 +252,18 @@ static int c2_read_dr(struct c2interface *c2if, unsigned char *data)
 	int cnt=-1, ret;
 
 	ret = write(c2if->tty_fd, dread_cmd, 1);
-	usleep(5000);
+//	usleep(5000);
 
 	while (cnt == -1) {
 		cnt = read(c2if->tty_fd, buf, 1);
-		usleep(100);
+//		usleep(100);
 	}
 //	printf("dr_read %x %d\t", buf[0], cnt);
 	*data = buf[0];
 	cnt = -1;
 	while (cnt == -1) {
 		cnt = read(c2if->tty_fd, buf, 1);
-		usleep(100);
+//		usleep(100);
 	}
 //	printf("dr_read = %x %d\n", buf[0], cnt);
 	if (buf[0] == '1')
