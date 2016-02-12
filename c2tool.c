@@ -224,6 +224,7 @@ static int init_tty(const char* arg)
     cfsetispeed(&tio,BAUDRATE);            // baudrate is declarated above
     tcsetattr(tty_fd_l,TCSANOW,&tio);
 	sleep(2);
+	write(tty_fd_l, "r", 1);
     read(tty_fd_l, buf, 200);
 //	printf("Programmer info:\n %s", buf);
     return tty_fd_l;
